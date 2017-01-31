@@ -8,7 +8,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.AppCompatButton;
 import android.view.View;
+import android.widget.Toast;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 
 import info.guardianproject.nearby.NearbyListener;
@@ -21,6 +23,7 @@ import louder.guardianproject.info.louder.R;
 public class MainActivity extends AppCompatActivity {
 
     private TOne mTone;
+    private TOnePlayer mTonePlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,10 +47,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void doListen (View button)
     {
-        if (requestPermissions()) {
-            startAudio();
-            startNearbyListen();
-        }
+        startPlayer();
+        startNearbyListen();
     }
 
     @Override
@@ -68,7 +69,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void foundNeighbor(Neighbor neighbor) {
-                
+                Toast.makeText(MainActivity.this,"Found neighbor to send to: " + neighbor.mName,Toast.LENGTH_LONG).show();
+
             }
 
             @Override
@@ -81,12 +83,13 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+        bs.startSharing();
     }
 
     private void startNearbyListen ()
     {
-        BluetoothReceiver bs = new BluetoothReceiver(this);
-        bs.setNearbyListener(new NearbyListener() {
+        BluetoothReceiver br = new BluetoothReceiver(this);
+        br.setNearbyListener(new NearbyListener() {
             @Override
             public void transferComplete(Neighbor neighbor, NearbyMedia media) {
 
@@ -94,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void foundNeighbor(Neighbor neighbor) {
+                Toast.makeText(MainActivity.this,"Found neighbor to receive from: " + neighbor.mName,Toast.LENGTH_LONG).show();
 
             }
 
@@ -107,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+        br.start();
     }
 
     private void startAudio ()
@@ -121,6 +126,16 @@ public class MainActivity extends AppCompatActivity {
         if (mTone != null)
             mTone.stopTone();
     }
+
+    private void startPlayer ()
+    {
+        /**
+        ByteArrayInputStream bais = new ByteArrayInputStream();
+        mTonePlayer = new TOnePlayer(bais);
+        mTonePlayer.start();
+         **/
+    }
+
 
     private final static int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
     private final static int MY_PERMISSIONS_REQUEST_BLUETOOTH = MY_PERMISSIONS_REQUEST_RECORD_AUDIO + 1;
