@@ -17,7 +17,6 @@ import java.io.ByteArrayOutputStream;
 public class TOne extends Thread {
     private Thread T1;
     private byte audiobuffer[] = new byte[100];
-    private ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
     public boolean Okay = true;
     public AudioRecord a;
@@ -26,6 +25,9 @@ public class TOne extends Thread {
     
     private static int DEFAULT_RATE = 22050;
    // private static int MIN_BUFFER_SIZE = DEFAULT_RATE;
+
+    private static int MAX_BUFFER = 1024 * 1024;
+    private ByteArrayOutputStream baos = new ByteArrayOutputStream(MAX_BUFFER);
 
     private boolean isPlayer = false;
 
@@ -66,6 +68,9 @@ public class TOne extends Thread {
             else {
                 baos.write(audiobuffer, 0, audiobuffer.length);
                 Log.d("Tone","buffer stream is: " + baos.size());
+
+                if (baos.size() > MAX_BUFFER)
+                    baos.reset();
             }
 
         }
