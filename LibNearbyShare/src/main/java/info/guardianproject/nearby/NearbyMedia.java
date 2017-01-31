@@ -1,6 +1,8 @@
 package info.guardianproject.nearby;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import info.guardianproject.nearby.bluetooth.roles.Utils;
 
@@ -15,6 +17,8 @@ public class NearbyMedia {
     public File mFileMedia;
     public byte[] mDigest;
     public long mLength;
+    public InputStream mStreamIn;
+    public OutputStream mStreamOut;
 
     public void setFileMedia (File fileMedia)
     {

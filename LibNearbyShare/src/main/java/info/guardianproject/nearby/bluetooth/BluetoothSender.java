@@ -9,6 +9,7 @@ import android.os.Message;
 import android.util.Log;
 
 import java.io.File;
+import java.io.InputStream;
 
 import info.guardianproject.nearby.NearbyListener;
 import info.guardianproject.nearby.NearbyMedia;
@@ -57,8 +58,20 @@ public class BluetoothSender implements NearbySender {
         mBluetoothManager.setTimeDiscoverable(timeInSec);
     }
 
-    public void setShareFile (File fileMedia, byte[] digest, String title, String mimeType, String metadata) {
+    public void setShareStream (InputStream is, String title, String mimeType, String metadata) {
 
+        mServerThread = new ServerThread(mBluetoothManager.getAdapter(), mHandler, mPairedDevicesOnly);
+
+        NearbyMedia nearbyMedia = new NearbyMedia();
+        nearbyMedia.mTitle = title;
+        nearbyMedia.mMimeType = mimeType;
+        nearbyMedia.mMetadataJson = metadata;
+        nearbyMedia.mStream = is;
+
+        mServerThread.setShareMedia(nearbyMedia);
+    }
+
+    public void setShareFile (File fileMedia, byte[] digest, String title, String mimeType, String metadata) {
 
         mServerThread = new ServerThread(mBluetoothManager.getAdapter(), mHandler, mPairedDevicesOnly);
 

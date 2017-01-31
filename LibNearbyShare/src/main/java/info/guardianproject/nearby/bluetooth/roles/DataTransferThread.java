@@ -8,6 +8,7 @@ import android.util.Log;
 import android.webkit.MimeTypeMap;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -36,10 +37,20 @@ class DataTransferThread extends Thread {
 
     public void run() {
 
-        if (this.mMedia != null)
-            sendData();
-       else
-            receiveData();
+        if (this.mMedia != null) {
+            if (mMedia.mFileMedia != null)
+                sendData();
+            else
+                sendStream ();
+        }
+       else {
+
+            if (mMedia.mFileMedia != null)
+                receiveData();
+            else
+                receiveStream();
+
+        }
 
     }
 
@@ -167,6 +178,97 @@ class DataTransferThread extends Thread {
         }
     }
 
+    private void receiveStream ()
+    {
+        try {
+
+            DataInputStream inputStream = new DataInputStream(socket.getInputStream());
+            OutputStream outputStream = socket.getOutputStream();
+            boolean waitingForHeader = true;
+
+            String fileName = null;
+            String fileType = null;
+            String metadataJson = null;
+
+            OutputStream dataOutputStream = null;
+
+            byte[] headerBytes = new byte[22];
+            byte[] digest = new byte[16];
+            int headerIndex = 0;
+            ProgressData progressData = new ProgressData();
+
+            while (true) {
+                if (waitingForHeader) {
+                    // Log.v(TAG, "Waiting for Header...");
+                    ;
+                    while (inputStream.available()< headerBytes.length)
+                    {
+                        try { Thread.sleep(50);} catch (Exception e){}
+                    }
+
+                    int byteMsb = (int)inputStream.readByte();
+                    int byteLsb = (int)inputStream.readByte();
+
+                    if ((byteMsb == Constants.HEADER_MSB) && (byteLsb == Constants.HEADER_LSB)) {
+                        Log.v(TAG, "Header Received.  Now obtaining length");
+
+                        progressData.totalSize = inputStream.readLong();
+                        progressData.remainingSize = progressData.totalSize;
+                        Log.v(TAG, "Data size: " + progressData.totalSize);
+
+                        int digestLength = inputStream.readInt();
+                        digest = new byte[digestLength];
+                        inputStream.read(digest);
+
+                        fileName = inputStream.readUTF();
+                        fileType = inputStream.readUTF();
+                        metadataJson = inputStream.readUTF();
+
+                        dataOutputStream = new DataOutputStream(mMedia.mStreamOut);
+
+                        waitingForHeader = false;
+                        sendProgress(progressData, fileName, fileType);
+                    } else {
+                        Log.e(TAG, "Did not receive correct header.  Closing socket");
+                        socket.close();
+                        handler.sendEmptyMessage(Constants.MessageType.INVALID_HEADER);
+                        break;
+                    }
+
+
+                }
+
+                if (!waitingForHeader) {
+                    // Read the data from the stream in chunks
+                    byte[] buffer = new byte[Constants.CHUNK_SIZE];
+
+
+                    // Log.v(TAG, "Waiting for data.  Expecting " + progressData.remainingSize + " more bytes.");
+
+                    while (progressData.remainingSize > 0) {
+
+                        int bytesRead = inputStream.read(buffer);
+                        //          Log.v(TAG, "Read " + bytesRead + " bytes into buffer");
+                        dataOutputStream.write(buffer, 0, bytesRead);
+                        progressData.remainingSize -= bytesRead;
+                        sendProgress(progressData, fileName, fileType);
+                    }
+
+                    dataOutputStream.flush();
+                    dataOutputStream.close();
+
+                    break;
+                }
+            }
+
+            //  Log.v(TAG, "Closing server socket");
+            socket.close();
+
+        } catch (Exception ex) {
+            Log.d(TAG, ex.toString());
+        }
+    }
+
     private void sendProgress(ProgressData progressData, String fileName, String fileType) {
         Message message = new Message();
         message.obj = progressData;
@@ -251,4 +353,47 @@ class DataTransferThread extends Thread {
 
 
     }
+
+    private void sendStream ()
+    {
+        Log.v(TAG, "Handle received stream to send");
+
+        try {
+            handler.sendEmptyMessage(Constants.MessageType.SENDING_DATA);
+
+            InputStream is = mMedia.mStreamIn;
+            DataOutputStream outputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+
+            // Send the header control first
+            outputStream.writeByte(Constants.HEADER_MSB);
+            outputStream.writeByte(Constants.HEADER_LSB);
+
+            ProgressData progressData = new ProgressData();
+            progressData.totalSize = 0;
+            progressData.remainingSize = -1;
+
+            outputStream.writeUTF(mMedia.mTitle);
+            outputStream.writeUTF(mMedia.mMimeType);
+            outputStream.writeUTF(mMedia.mMetadataJson);
+
+            byte[] buffer = new byte[Constants.CHUNK_SIZE];
+            int bytesRead;
+            while ((bytesRead = is.read(buffer)) != -1) {
+                //    Log.v(TAG, "Read " + bytesRead + " bytes into buffer; Writing to output...");
+                outputStream.write(buffer, 0, bytesRead);
+                progressData.totalSize += bytesRead;
+                sendProgress(progressData,mMedia.mTitle, mMedia.mMimeType);
+            }
+
+            outputStream.flush();
+
+            Log.v(TAG, "Stream has ended");
+
+        } catch (Exception e) {
+            Log.e(TAG, "error reading stream", e);
+        }
+
+
+    }
+
 }
