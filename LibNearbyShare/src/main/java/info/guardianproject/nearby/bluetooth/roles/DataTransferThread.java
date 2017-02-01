@@ -28,28 +28,38 @@ class DataTransferThread extends Thread {
     private Handler handler;
 
     private NearbyMedia mMedia;
+    private int mode = -1;
 
+    public final static int MODE_SEND_FILE = 0;
+    public final static int MODE_SEND_STREAM = 1;
 
-    public DataTransferThread(BluetoothSocket socket, Handler handler) {
+    public final static int MODE_RECEIVE_STREAM = 2;
+    public final static int MODE_RECEIVE_FILE = 3;
+
+    public DataTransferThread(BluetoothSocket socket, Handler handler, int mode) {
         this.socket = socket;
         this.handler = handler;
+        this.mode = mode;
     }
 
     public void run() {
 
-        if (this.mMedia != null) {
-            if (mMedia.mFileMedia != null)
+        switch (mode)
+        {
+            case MODE_SEND_FILE:
                 sendData();
-            else
-                sendStream ();
-        }
-       else {
-
-            if (mMedia.mFileMedia != null)
+                break;
+            case MODE_SEND_STREAM:
+                sendStream();
+                break;
+            case MODE_RECEIVE_FILE:
                 receiveData();
-            else
-                receiveStream();
-
+                break;
+            case MODE_RECEIVE_STREAM:
+                receiveData();
+                break;
+            default:
+                //nada
         }
 
     }

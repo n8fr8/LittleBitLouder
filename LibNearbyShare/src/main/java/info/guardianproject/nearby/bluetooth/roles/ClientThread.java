@@ -90,7 +90,7 @@ public class ClientThread extends Thread {
 
             try {
                 Log.d(TAG, "Got connection from server.  Spawning new data transfer thread.");
-                dataTransferThread = new DataTransferThread(socket, handler);
+                dataTransferThread = new DataTransferThread(socket, handler, DataTransferThread.MODE_RECEIVE_FILE);
                 dataTransferThread.start();
             } catch (Exception e) {
                 Log.e(TAG, e.toString());

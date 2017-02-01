@@ -68,7 +68,11 @@ public class ServerThread extends Thread {
 
                 try {
                     Log.v(TAG, "Got connection from client.  Spawning new data transfer thread.");
-                    DataTransferThread dataTransferThread = new DataTransferThread(socket, handler);
+                    int mode = DataTransferThread.MODE_SEND_FILE;
+                    if (mMedia.mStreamIn != null)
+                        mode = DataTransferThread.MODE_SEND_STREAM;
+
+                    DataTransferThread dataTransferThread = new DataTransferThread(socket, handler, mode);
                     dataTransferThread.setData(mMedia);
                     dataTransferThread.start();
 

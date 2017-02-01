@@ -66,7 +66,7 @@ public class BluetoothSender implements NearbySender {
         nearbyMedia.mTitle = title;
         nearbyMedia.mMimeType = mimeType;
         nearbyMedia.mMetadataJson = metadata;
-        nearbyMedia.mStream = is;
+        nearbyMedia.mStreamIn = is;
 
         mServerThread.setShareMedia(nearbyMedia);
     }
