@@ -61,6 +61,16 @@ public class MainActivity extends AppCompatActivity {
     private void startNearbySend ()
     {
         BluetoothSender bs = new BluetoothSender(this);
+        bs.setPairedDevicesOnly(false);
+
+        NearbyMedia media = new NearbyMedia();
+        media.mTitle = "Louder Stream";
+        media.mMimeType = "audio/pcm";
+        media.mMetadataJson = "";
+        media.mStreamOut = mTone.getBuffer();
+
+        bs.setShareFile(media);
+
         bs.setNearbyListener(new NearbyListener() {
             @Override
             public void transferComplete(Neighbor neighbor, NearbyMedia media) {
@@ -89,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
     private void startNearbyListen ()
     {
         BluetoothReceiver br = new BluetoothReceiver(this);
+        br.setPairedDevicesOnly(false);
         br.setNearbyListener(new NearbyListener() {
             @Override
             public void transferComplete(Neighbor neighbor, NearbyMedia media) {
@@ -139,6 +150,9 @@ public class MainActivity extends AppCompatActivity {
 
     private final static int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
     private final static int MY_PERMISSIONS_REQUEST_BLUETOOTH = MY_PERMISSIONS_REQUEST_RECORD_AUDIO + 1;
+    private final static int MY_PERMISSIONS_REQUEST_LOCATION = MY_PERMISSIONS_REQUEST_RECORD_AUDIO + 2;
+
+
 
     private boolean requestPermissions () {
         // Here, thisActivity is the current activity
@@ -195,6 +209,33 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
 
+        // Here, thisActivity is the current activity
+        // Should we show an explanation?
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED)
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                return false;
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+                return false;
+            }
+
         return true;
     }
 
@@ -226,5 +267,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
 }
 
